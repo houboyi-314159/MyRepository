@@ -1,0 +1,2 @@
+# 可能需要设置执行策略
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
