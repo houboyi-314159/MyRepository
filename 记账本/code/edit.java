@@ -77,6 +77,14 @@ public class edit extends JFrame {
 
         ledgerPanel.add(inputPanel, BorderLayout.NORTH);
         ledgerPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // 新增：CSV 单条删除按钮
+        JButton deleteCsvBtn = new JButton("删除选中记录");
+        deleteCsvBtn.addActionListener(e -> deleteSelectedRecord());
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnPanel.add(deleteCsvBtn);
+        ledgerPanel.add(btnPanel, BorderLayout.SOUTH);
+
         tabbedPane.add("记账", ledgerPanel);
 
         add(tabbedPane);
@@ -196,6 +204,50 @@ public class edit extends JFrame {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    /**
+     * 删除选中的 CSV 记录
+     */
+    private void deleteSelectedRecord() {
+        int selectedRow = recordTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "请先在表格中选中要删除的记录");
+            return;
+        }
+
+        // 从表格模型获取该行的日期（作为唯一标识）
+        String dateToDelete = (String) tableModel.getValueAt(selectedRow, 0);
+
+        // 读取所有记录，过滤掉要删除的那一行
+        File file = new File(ledgerPath);
+        StringBuilder newContent = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",", 4);
+                if (parts.length == 4 && !parts[0].equals(dateToDelete)) {
+                    newContent.append(line).append(System.lineSeparator());
+                }
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "读取账本失败：" + ex.getMessage());
+            return;
+        }
+
+        // 写回过滤后的内容
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+            bw.write(newContent.toString());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "删除记录失败：" + ex.getMessage());
+            return;
+        }
+
+        // 刷新表格
+        loadRecords();
+        JOptionPane.showMessageDialog(this, "已删除选中记录");
     }
 
     public static void main(String[] args) {
